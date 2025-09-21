@@ -277,7 +277,6 @@ static bool chg_ctrl_by_sale_mode = false;
 
 static int force_fast_charge = 0;
 module_param(force_fast_charge, int, 0644);
-
 static int ffc_val = 900;
 module_param(ffc_val, int, 0644);
 
@@ -6499,7 +6498,7 @@ void oplus_chg_set_input_current_limit(struct oplus_chg_chip *chip)
 		if (force_fast_charge > 0) {
 			current_limit = ffc_val;
 		} else {
-			current_limit = chip->limits.input_current_usb_ma;	
+			current_limit = chip->limits.input_current_usb_ma;
 		}
 		break;
 	case POWER_SUPPLY_TYPE_USB_DCP:
