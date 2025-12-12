@@ -232,7 +232,8 @@ int oplus_ofp_init(void *dsi_panel)
 
 		if (!oplus_ofp_video_mode_aod_fod_is_enabled()) {
 			/* indicates whether display on cmd(29h) needs to be sent after image data write before aod on or not */
-			p_oplus_ofp_params->need_to_wait_data_before_aod_on = utils->read_bool(utils->data, "oplus,ofp-need-to-wait-data-before-aod-on");
+			/* AOSP FIX: Force false to prevent AOD/Doze failures */
+			p_oplus_ofp_params->need_to_wait_data_before_aod_on = false;
 			OFP_INFO("need_to_wait_data_before_aod_on:%d\n", p_oplus_ofp_params->need_to_wait_data_before_aod_on);
 			OPLUS_OFP_TRACE_INT("need_to_wait_data_before_aod_on", p_oplus_ofp_params->need_to_wait_data_before_aod_on);
 
@@ -694,24 +695,12 @@ int oplus_ofp_parse_dtsi_config(void *dsi_display_mode, void *dsi_parser_utils)
 	OFP_DEBUG("oplus_ofp_need_to_sync_data_in_aod_unlocking:%d\n", priv_info->oplus_ofp_need_to_sync_data_in_aod_unlocking);
 
 	/* indicates how many frames does backlight on cmd take effect */
-	rc = utils->read_u32(utils->data, "oplus,ofp-backlight-on-period", &data);
-	if (rc) {
-		OFP_DEBUG("failed to parse oplus,ofp-backlight-on-period\n");
-		priv_info->oplus_ofp_backlight_on_period = 1;
-	} else {
-		priv_info->oplus_ofp_backlight_on_period = data;
-	}
-	OFP_DEBUG("oplus_ofp_backlight_on_period:%u\n", priv_info->oplus_ofp_backlight_on_period);
+	/* AOSP FIX: Force to 1 to disable usleep_range lag in HBM OFF path */
+	priv_info->oplus_ofp_backlight_on_period = 1;
 
 	/* indicates how many frames does hbm on cmds take effect */
-	rc = utils->read_u32(utils->data, "oplus,ofp-hbm-on-period", &data);
-	if (rc) {
-		OFP_DEBUG("failed to parse oplus,ofp-hbm-on-period\n");
-		priv_info->oplus_ofp_hbm_on_period = 1;
-	} else {
-		priv_info->oplus_ofp_hbm_on_period = data;
-	}
-	OFP_DEBUG("oplus_ofp_hbm_on_period:%u\n", priv_info->oplus_ofp_hbm_on_period);
+	/* AOSP FIX: Force to 1 to improve HBM ON speed */
+	priv_info->oplus_ofp_hbm_on_period = 1;
 
 	if (!oplus_ofp_video_mode_aod_fod_is_enabled()) {
 		/*
@@ -978,7 +967,7 @@ static int oplus_ofp_display_cmd_set(void *dsi_display, enum dsi_cmd_set_type ty
 	OPLUS_OFP_TRACE_BEGIN("oplus_ofp_display_cmd_set");
 
 	mutex_lock(&display->display_lock);
-
+#if 0
 	/* enable the clk vote for CMD mode panels */
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
 		rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
@@ -988,13 +977,13 @@ static int oplus_ofp_display_cmd_set(void *dsi_display, enum dsi_cmd_set_type ty
 			goto error;
 		}
 	}
-
+#endif
 	rc = oplus_ofp_panel_cmd_set(display->panel, type);
 	if (rc) {
 		OFP_ERR("[%s] failed to send %s, rc=%d\n",
 			display->name, cmd_set_prop_map[type], rc);
 	}
-
+#if 0
 	/* disable the clk vote for CMD mode panels */
 	if (display->config.panel_mode == DSI_OP_CMD_MODE) {
 		rc = dsi_display_clk_ctrl(display->dsi_clk_handle,
@@ -1003,13 +992,11 @@ static int oplus_ofp_display_cmd_set(void *dsi_display, enum dsi_cmd_set_type ty
 			OFP_ERR("[%s] failed to disable DSI clocks, rc=%d\n", display->name, rc);
 		}
 	}
-
+#endif
 	if (type == DSI_CMD_LHBM_PRESSED_ICON_OFF)
 		oplus_panel_set_lhbm_off_te_timestamp(display->panel);
 
-error:
 	mutex_unlock(&display->display_lock);
-
 	OPLUS_OFP_TRACE_END("oplus_ofp_display_cmd_set");
 	OFP_DEBUG("end\n");
 
@@ -1455,6 +1442,7 @@ end:
 
 int oplus_ofp_send_hbm_state_event(unsigned int hbm_state)
 {
+#if 0
 	OFP_DEBUG("start\n");
 
 	if (oplus_ofp_local_hbm_is_enabled()) {
@@ -1470,7 +1458,7 @@ int oplus_ofp_send_hbm_state_event(unsigned int hbm_state)
 	OPLUS_OFP_TRACE_END("oplus_ofp_send_hbm_state_event");
 
 	OFP_DEBUG("end\n");
-
+#endif
 	return 0;
 }
 
